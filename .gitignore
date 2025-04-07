@@ -5,7 +5,7 @@
 
 # dotenv files
 .env
-.appsettings.json
+appsettings.json
 appsettings.Development.json
 
 # 编译输出文件夹

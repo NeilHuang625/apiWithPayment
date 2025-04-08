@@ -23,7 +23,7 @@ namespace cakeshop_api.Services
             order.PaymentStatus = false;
 
             await _orderCollection.InsertOneAsync(order);
-            return order.Id;
+            return order.Id ?? throw new InvalidOperationException("Order ID cannot be null.");
         }
 
         // Get order by ID

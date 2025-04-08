@@ -27,7 +27,8 @@ namespace cakeshop_api.Services
         }
 
         // Get order by ID
-        public async Task<Order> GetOrderById(string id){
+        public async Task<Order> GetOrderById(string id)
+        {
             var order = await _orderCollection.Find(o => o.Id == id).FirstOrDefaultAsync();
             if (order == null)
             {
@@ -101,14 +102,14 @@ namespace cakeshop_api.Services
             return result.ModifiedCount > 0;
         }
 
-        public async Task<bool> GetPaymentIntent(string paymentIntentId)
+        public async Task<Order> GetPaymentIntent(string paymentIntentId)
         {
             var order = await _orderCollection.Find(o => o.PaymentIntentId == paymentIntentId).FirstOrDefaultAsync();
             if (order == null)
             {
-                return false;
+                throw new Exception($"Order with PaymentIntent ID {paymentIntentId} not found.");
             }
-            return true;
+            return order;
         }
     }
 }

@@ -94,9 +94,8 @@ namespace cakeshop_api.Controllers
         {
             var result = await _orderService.GetPaymentIntent(paymentIntentId);
 
-            if (!result)
-                return BadRequest("Failed to get payment intent.");
-
+            if (result is null)
+                return BadRequest("Failed to get order.");
             return Ok(result);
         }
     }

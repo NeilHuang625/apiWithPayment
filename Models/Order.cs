@@ -22,6 +22,12 @@ namespace cakeshop_api.Models
 
         [BsonElement("paymentStatus")]
         public bool PaymentStatus { get; set; } = false;
+        [BsonElement("paymentIntentId")]
+        public string? PaymentIntentId { get; set; }
+        [BsonElement("stripeCustomerId")]
+        public string? StripeCustomerId { get; set; }
+        [BsonElement("totalAmount")]
+        public decimal TotalAmount { get; set; } = 0;
     }
 
     public class OrderItem
@@ -51,7 +57,7 @@ namespace cakeshop_api.Models
     public class Status
     {
         public const string Pending = "Pending";
-        public const string Processing = "Confirmed";
-        public const string Delivered = "Completed";
+        public const string Confirmed = "Confirmed";
+        public const string Completed = "Completed";
     }
 }

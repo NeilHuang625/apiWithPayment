@@ -16,15 +16,58 @@ namespace cakeshop_api.Services
             _hubContext = hubContext;
         }
 
-        public async Task<Order> CreateOrderAsync(Order order)
+        // Create a pending order in the database and returns the order ID
+        public async Task<string> CreatePendingOrder(Order order)
         {
+            order.OrderStatus = Status.Pending;
+            order.PaymentStatus = false;
+
             await _orderCollection.InsertOneAsync(order);
+            return order.Id;
+        }
 
-            // Notify all clients about the new order
-            await _hubContext.Clients.All.SendAsync("NewOrder", order);
-
+        // Get order by ID
+        public async Task<Order> GetOrderById(string id){
+            var order = await _orderCollection.Find(o => o.Id == id).FirstOrDefaultAsync();
+            if (order == null)
+            {
+                throw new Exception($"Order with ID {id} not found.");
+            }
             return order;
         }
+
+        /// <summary>
+        /// Fulfills an order after payment is completed
+        /// </summary>
+        public async Task FulfillOrder(string pendingOrderId, string paymentIntentId, string customerId)
+        {
+            var filter = Builders<Order>.Filter.And(
+                Builders<Order>.Filter.Eq(o => o.Id, pendingOrderId),
+                Builders<Order>.Filter.Eq(o => o.PaymentStatus, false)
+            );
+
+            var update = Builders<Order>.Update
+                .Set(o => o.PaymentStatus, true)
+                .Set(o => o.OrderStatus, Status.Pending)
+                .Set(o => o.PaymentIntentId, paymentIntentId)
+                .Set(o => o.StripeCustomerId, customerId)
+                .Set(o => o.CreatedDate, DateTime.UtcNow);
+
+            var result = await _orderCollection.UpdateOneAsync(filter, update);
+
+            if (result.MatchedCount == 0)
+            {
+                throw new Exception($"Pending order {pendingOrderId} not found or already paid.");
+            }
+
+            // 拿更新后的订单发送通知（可选）
+            var fulfilledOrder = await GetOrderById(pendingOrderId);
+            if (fulfilledOrder != null)
+            {
+                await _hubContext.Clients.All.SendAsync("NewOrder", fulfilledOrder);
+            }
+        }
+
 
         public async Task<List<Order>> GetOrdersByUserAsync(string userId)
         {
@@ -56,6 +99,16 @@ namespace cakeshop_api.Services
         {
             var result = await _orderCollection.ReplaceOneAsync(o => o.Id == order.Id, order);
             return result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> GetPaymentIntent(string paymentIntentId)
+        {
+            var order = await _orderCollection.Find(o => o.PaymentIntentId == paymentIntentId).FirstOrDefaultAsync();
+            if (order == null)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

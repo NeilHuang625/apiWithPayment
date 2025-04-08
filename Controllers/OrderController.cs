@@ -50,7 +50,7 @@ namespace cakeshop_api.Controllers
         [Authorize(Roles = "user, admin")]
         public async Task<IActionResult> CreateOrderAsync([FromBody] Order order)
         {
-            var result = await _orderService.CreateOrderAsync(order);
+            var result = await _orderService.CreatePendingOrder(order);
 
             if (result is null)
                 return BadRequest("Failed to create order.");
@@ -86,6 +86,18 @@ namespace cakeshop_api.Controllers
                 return BadRequest("Failed to update order.");
 
             return Ok("Order updated.");
+        }
+
+        [HttpGet("payment-intent/{paymentIntentId}")]
+        [Authorize(Roles = "user, admin")]
+        public async Task<IActionResult> GetPaymentIntent(string paymentIntentId)
+        {
+            var result = await _orderService.GetPaymentIntent(paymentIntentId);
+
+            if (!result)
+                return BadRequest("Failed to get payment intent.");
+
+            return Ok(result);
         }
     }
 }
